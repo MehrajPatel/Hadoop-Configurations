@@ -62,6 +62,9 @@ sudo yum install cloudera-manager-daemons cloudera-manager-server
 sudo yum install oracle-j2sdk1.8 -y
 
 wget https://mehraj-first.s3-us-west-2.amazonaws.com/jce_policy-8.zip
+unzip jce_policy-8.zip
+cp ~/UnlimitedJCEPolicyJDK8/*.jar $JAVA_HOME/jre/lib/security/
+
 
 #sudo yum install http://dev.mysql.com/get/mysql-community-release-el7-5.noarch.rpm -y
 #sudo yum install mysql-community-server-8.0.22-1.el8.x86_64.rpm
