@@ -1,6 +1,9 @@
 
-sudo yum -y install httpd scl-utils python27 psmisc wget 
-alias python=/usr/bin/python2.7
+sudo yum -y install httpd scl-utils python27 psmisc unzip wget 
+#alias python=/usr/bin/python2.7
+
+sudo systemctl start httpd
+sudo systemctl enable httpd
 
 sudo useradd cloudera-scm
 sudo usermod -aG wheel cloudera-scm
@@ -51,11 +54,14 @@ cd /etc/yum.repos.d/
 sudo wget https://archive.cloudera.com/cm6/6.3.1/redhat7/yum/cloudera-manager.repo
 
 #add following lines to cloudera-manager.repo
-# baseurl=http://127.0.0.1/cm6/RPMS/
+# baseurl=http://127.0.0.1/cm6/
 # gpgkey=http://127.0.0.1/cm6/RPM-GPG-KEY-cloudera
 
 sudo curl http://127.0.0.1/cm6/RPMS/
 sudo yum install cloudera-manager-daemons cloudera-manager-server
+sudo yum install oracle-j2sdk1.8 -y
+
+wget https://mehraj-first.s3-us-west-2.amazonaws.com/jce_policy-8.zip
 
 #sudo yum install http://dev.mysql.com/get/mysql-community-release-el7-5.noarch.rpm -y
 #sudo yum install mysql-community-server-8.0.22-1.el8.x86_64.rpm
@@ -69,9 +75,18 @@ sudo rpm -i mysql80-community-release-el7-3.noarch.rpm
 sudo yum install mysql-server
 sudo systemctl start mysqld
 sudo systemctl enable mysqld
+
+sudo grep 'temporary password' /var/log/mysqld.log
+
+#set password policy
+SHOW VARIABLES LIKE 'validate_password%';
+SET GLOBAL validate_password.policy=LOW;
+
 sudo mysql_secure_installation
-mysql -uroot -p 
-CREATE USER 'scm'@'localhost' IDENTIFIED BY 'scm_password';
+mysql -uroot -p
+
+ALTER USER 'root'@'localhost' IDENTIFIED BY 'scm_password';
+
 
 cd
 wget https://dev.mysql.com/get/Downloads/Connector-J/mysql-connector-java-5.1.46.tar.gz
@@ -87,36 +102,47 @@ sudo vi db.properties
 sudo /opt/cloudera/cm/schema/scm_prepare_database.sh -h 127.0.0.1 mysql scm scm scm_password
 #sudo /usr/share/cmf/schema/scm_prepare_database.sh database-type mysql scm root 12345
 
+sudo service cloudera-scm-server start
+sudo service cloudera-scm-agent start
 
 CREATE DATABASE scm DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_general_ci;
+CREATE USER 'scm'@'localhost' IDENTIFIED BY 'scm_password';
 GRANT ALL PRIVILEGES ON scm.* TO 'scm'@'localhost';
 
 CREATE DATABASE amon DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_general_ci;
-GRANT ALL ON amon.* TO 'amon'@'%' IDENTIFIED BY 'amon_password';
+CREATE USER 'amon'@'%' IDENTIFIED BY 'amon_password';
+GRANT ALL PRIVILEGES ON amon.* TO 'amon'@'%' WITH GRANT OPTION;
 
 CREATE DATABASE rman DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_general_ci;
-GRANT ALL ON rman.* TO 'rman'@'%' IDENTIFIED BY 'rman_password';
+CREATE USER 'rman'@'%' IDENTIFIED BY 'rman_password';
+GRANT ALL PRIVILEGES ON rman.* TO 'rman'@'%' WITH GRANT OPTION;
 
 CREATE DATABASE metastore DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_general_ci;
-GRANT ALL ON metastore.* TO 'metastore'@'%' IDENTIFIED BY 'metastore_password';
+CREATE USER 'metastore'@'%' IDENTIFIED BY 'metastore_password';
+GRANT ALL PRIVILEGES ON metastore.* TO 'metastore'@'%' WITH GRANT OPTION;
 
 CREATE DATABASE sentry DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_general_ci;
-GRANT ALL ON sentry.* TO 'sentry'@'%' IDENTIFIED BY 'sentry_password';
+CREATE USER 'sentry'@'%' IDENTIFIED BY 'sentry_password';
+GRANT ALL PRIVILEGES ON sentry.* TO 'sentry'@'%' WITH GRANT OPTION;
 
 CREATE DATABASE nav DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_general_ci;
-GRANT ALL ON nav.* TO 'nav'@'%' IDENTIFIED BY 'nav_password';
+CREATE USER 'nav'@'%' IDENTIFIED BY 'nav_password';
+GRANT ALL PRIVILEGES ON nav.* TO 'nav'@'%' WITH GRANT OPTION;
 
 CREATE DATABASE navms DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_general_ci;
-GRANT ALL ON navms.* TO 'navms'@'%' IDENTIFIED BY 'navms_password';
+CREATE USER 'navms'@'%' IDENTIFIED BY 'navms_password';
+GRANT ALL PRIVILEGES ON navms.* TO 'navms'@'%' WITH GRANT OPTION;
 
 CREATE DATABASE oozie DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_general_ci;
-GRANT ALL ON oozie.* TO 'oozie'@'%' IDENTIFIED BY 'oozie_password';
+CREATE USER 'oozie'@'%' IDENTIFIED BY 'oozie_password';
+GRANT ALL PRIVILEGES ON oozie.* TO 'oozie'@'%' WITH GRANT OPTION;
 
 CREATE DATABASE hue DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_general_ci;
-GRANT ALL ON hue.* TO 'hue'@'%' IDENTIFIED BY 'hue_password';
+CREATE USER 'hue'@'%' IDENTIFIED BY 'hue_password';
+GRANT ALL PRIVILEGES ON hue.* TO 'hue'@'%' WITH GRANT OPTION;
 
-CREATE DATABASE scm DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_general_ci;
-GRANT ALL ON scm.* TO 'scm'@'%' IDENTIFIED BY 'scm_password';
+#CREATE DATABASE scm DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_general_ci;
+#GRANT ALL ON scm.* TO 'scm'@'%' IDENTIFIED BY 'scm_password';
 
 sudo systemctl restart cloudera-scm-server
 sudo systemctl enable cloudera-scm-server
